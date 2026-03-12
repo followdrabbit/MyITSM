@@ -1599,7 +1599,7 @@ Allow group grp-dev-team to read all-resources in compartment cmp-desenvolviment
                 </div>
               </div>
             )}
-            </>
+            </div>
             )}
           </motion.div>
         </AnimatePresence>
