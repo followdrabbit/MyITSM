@@ -3,7 +3,9 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { categories, providers, awsAccounts, azureSubscriptions, azureResourceGroups, azureRoleDefinitions, azureKeyVaults, ociCompartments, ociGroups, ociVaults, adGroups, psets } from '@/data/mockData';
-import { ArrowLeft, ArrowRight, Check, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, AlertTriangle, Info, AlertOctagon } from 'lucide-react';
+import { AuditForm } from '@/components/forms/AuditForm';
+import { BreakingGlassForm } from '@/components/forms/BreakingGlassForm';
 
 const spring = { type: 'spring' as const, duration: 0.4, bounce: 0 };
 
@@ -70,6 +72,9 @@ export default function NewTicket() {
   const [showErrors, setShowErrors] = useState(false);
 
   if (!provider || !category) return <Layout><p>Categoria não encontrada.</p></Layout>;
+
+  const isAudit = category.type === 'audit';
+  const isBreakingGlass = category.type === 'breaking-glass';
 
   const isAWSRole = categoryId === 'aws-role';
   const isAWSPset = categoryId === 'aws-pset';
@@ -151,6 +156,12 @@ export default function NewTicket() {
             transition={spring}
             className="bg-card rounded-xl p-6 card-shadow"
           >
+            {/* Audit / Breaking Glass forms */}
+            {(isAudit || isBreakingGlass) ? (
+              isAudit ? <AuditForm step={currentStep} providerId={providerId!} category={category} /> :
+              <BreakingGlassForm step={currentStep} providerId={providerId!} category={category} />
+            ) : (
+            <div>
             {/* Step 1: General Data */}
             {currentStep === 1 && (
               <div className="space-y-5">
@@ -1587,6 +1598,8 @@ Allow group grp-dev-team to read all-resources in compartment cmp-desenvolviment
                   </div>
                 </div>
               </div>
+            )}
+            </div>
             )}
           </motion.div>
         </AnimatePresence>
