@@ -1,6 +1,6 @@
 import { Layout } from '@/components/Layout';
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { categories, providers, CategoryType } from '@/data/mockData';
 import { CriticalityBadge, TypeBadge } from '@/components/Badges';
 import { ArrowLeft, ArrowRight, CheckSquare, ShieldCheck, FileText, ClipboardCheck, AlertOctagon } from 'lucide-react';

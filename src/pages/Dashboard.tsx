@@ -1,6 +1,6 @@
 import { Layout } from '@/components/Layout';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { tickets, providers } from '@/data/mockData';
 import { ProviderBadge, StatusBadge, CriticalityBadge, TypeBadge } from '@/components/Badges';
