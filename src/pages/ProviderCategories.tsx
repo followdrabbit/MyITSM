@@ -120,11 +120,14 @@ function CrossCuttingView({ typeId }: { typeId: string }) {
 }
 
 export default function ProviderCategories() {
-  const { providerId, typeId } = useParams<{ providerId: string; typeId?: string }>();
+  const { providerId, typeId } = useParams<{ providerId?: string; typeId?: string }>();
 
   // Cross-cutting view
-  if (providerId === 'cross' && typeId) {
+  if (typeId) {
     return <CrossCuttingView typeId={typeId} />;
+  }
+  if (providerId === 'cross') {
+    return <Layout><p>Tipo não especificado.</p></Layout>;
   }
 
   const provider = providers.find(p => p.id === providerId);
