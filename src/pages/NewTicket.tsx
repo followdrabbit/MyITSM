@@ -1514,6 +1514,30 @@ Allow group grp-dev-team to read all-resources in compartment cmp-desenvolviment
                     ['Nome da Role', 'lambda-s3-integration-role'], ['Conta AWS', '123456789012 (prd-payment-gateway)'],
                     ['Trusted Entity', 'AWS Service'], ['Principal', 'lambda.amazonaws.com'],
                     ['Policies', 'AmazonS3ReadOnlyAccess'], ['Permission Boundary', 'BoundaryPolicy-Standard'],
+                  ] : isAzureRole ? [
+                    ['Subscription', 'Corp-Production (sub-001)'], ['Scope', 'Resource Group'],
+                    ['Resource Group', 'rg-webapp-prod'], ['Role', 'Contributor'],
+                    ['Principal Type', 'User'], ['Principal', 'felipe.torres@corp.com'],
+                  ] : isAzureSP ? [
+                    ['Nome do SP', 'sp-github-actions-deploy'], ['Tenant', 'corp.onmicrosoft.com'],
+                    ['Autenticação', 'Federated Credential (OIDC)'], ['Subscription', 'Corp-Staging'],
+                    ['Role', 'Contributor, AcrPush'], ['Expiração', 'N/A (OIDC)'],
+                  ] : isAzureKV ? [
+                    ['Key Vault', 'kv-secrets-webapp'], ['Modelo', 'Azure RBAC'],
+                    ['Tipo de Objeto', 'Secrets'], ['Permissões', 'Get + List'],
+                    ['Principal', 'mi-webapp-keyvault-access'], ['Classificação', 'Confidencial'],
+                  ] : isOCIPolicy ? [
+                    ['Policy', 'policy-dev-manage-instances-dev'], ['Compartment', 'cmp-desenvolvimento'],
+                    ['Group', 'grp-dev-team'], ['Verbo', 'manage'],
+                    ['Resource Type', 'instances'], ['Escopo', 'Compartment'],
+                  ] : isOCIDynGroup ? [
+                    ['Dynamic Group', 'dg-functions-objstorage-access'], ['Tipo Recurso', 'Functions (fnfunc)'],
+                    ['Compartment', 'cmp-desenvolvimento'], ['Matching Rule', "ALL {resource.type = 'fnfunc'}"],
+                    ['Policy Relacionada', 'policy-dg-functions-read'], ['Risco', 'Médio'],
+                  ] : isOCIVault ? [
+                    ['Vault', 'vault-data-encryption'], ['Compartment', 'cmp-financeiro'],
+                    ['Key Shape', 'AES-256'], ['Protection Mode', 'HSM'],
+                    ['Classificação', 'Restrito'], ['Rotação', '90 dias'],
                   ] : [['Detalhes', 'Preenchidos conforme categoria']] },
                   { title: 'Segurança e Governança', items: [
                     ['Risco', 'Alto'], ['Segregação', 'Sem conflito'], ['Menor Privilégio', 'Justificado'],
