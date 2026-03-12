@@ -506,8 +506,828 @@ export default function NewTicket() {
                   </div>
                 )}
 
-                {/* Generic for Azure/OCI */}
-                {!isAWSRole && !isAWSPset && !isAWSProfile && !isAWSAccount && providerId === 'azure' && (
+                {/* ============ AZURE SPECIFIC FORMS ============ */}
+
+                {/* Azure Role Assignment */}
+                {isAzureRole && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Scope" required help="Nível onde a role será atribuída">
+                      <SelectField options={['Management Group', 'Subscription', 'Resource Group', 'Resource']} />
+                    </FormField>
+                    <FormField label="Resource Group" help="Obrigatório se scope = Resource Group">
+                      <SelectField options={azureResourceGroups.map(r => `${r.name} (${r.subscription})`)} placeholder="Selecione o RG..." />
+                    </FormField>
+                    <FormField label="Resource Path" help="Obrigatório se scope = Resource">
+                      <InputField placeholder="/subscriptions/.../providers/Microsoft.Compute/virtualMachines/vm-01" />
+                    </FormField>
+                    <FormField label="Role Definition" required>
+                      <SelectField options={azureRoleDefinitions} />
+                    </FormField>
+                    <FormField label="Custom Role Name" help="Apenas se Role = Custom Role">
+                      <InputField placeholder="Custom-DevOps-Operator" />
+                    </FormField>
+                    <FormField label="Principal Type" required>
+                      <SelectField options={['User', 'Group', 'Service Principal', 'Managed Identity']} />
+                    </FormField>
+                    <FormField label="Principal ID / UPN" required help="E-mail do usuário, Object ID ou nome do grupo">
+                      <InputField placeholder="user@corp.com ou Object ID" />
+                    </FormField>
+                    <FormField label="Condição (Condition)" help="Condição ABAC opcional para restringir assignment">
+                      <TextArea placeholder="@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:name] StringEquals 'my-container'" rows={2} />
+                    </FormField>
+                    <FormField label="Necessidade" required>
+                      <SelectField options={['Permanente', 'Temporária (PIM / Eligible)']} />
+                    </FormField>
+                    <FormField label="Duração (se temporária)">
+                      <SelectField options={['4 horas', '8 horas', '1 dia', '7 dias', '30 dias', '90 dias']} />
+                    </FormField>
+                    <FormField label="Tenant" required>
+                      <InputField value="corp.onmicrosoft.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa de Menor Privilégio" required>
+                        <TextArea placeholder="Descreva por que esta role é a mínima necessária para o cenário..." rows={3} />
+                      </FormField>
+                    </div>
+                    <FormField label="Owner do Assignment" required>
+                      <InputField placeholder="felipe.torres@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['DevOps', 'SRE', 'Engenharia', 'Segurança', 'Data & Analytics']} />
+                    </FormField>
+                    <div className="md:col-span-2 bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">Atenção: Role Assignments em Produção</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Assignments com scope de Subscription ou Management Group em produção exigem aprovação de Segurança Cloud e Compliance. Roles Owner e User Access Administrator exigem justificativa reforçada.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure Service Principal */}
+                {isAzureSP && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Nome do Service Principal" required help="Formato: sp-projeto-finalidade">
+                      <InputField placeholder="sp-github-actions-deploy" />
+                    </FormField>
+                    <FormField label="Descrição" required>
+                      <InputField placeholder="SP para deploy automatizado via GitHub Actions" />
+                    </FormField>
+                    <FormField label="Tenant" required>
+                      <InputField value="corp.onmicrosoft.com" />
+                    </FormField>
+                    <FormField label="Tipo de Autenticação" required>
+                      <SelectField options={['Client Secret', 'Certificate', 'Federated Credential (OIDC)']} />
+                    </FormField>
+                    <FormField label="Subscription(s) de Acesso" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Scope do Acesso" required>
+                      <SelectField options={['Subscription', 'Resource Group', 'Resource']} />
+                    </FormField>
+                    <FormField label="Resource Group (se aplicável)">
+                      <SelectField options={azureResourceGroups.map(r => r.name)} placeholder="Selecione..." />
+                    </FormField>
+                    <FormField label="Role(s) Necessárias" required help="Roles que o SP precisa para operar">
+                      <InputField placeholder="Contributor, AcrPush, Key Vault Secrets User" />
+                    </FormField>
+                    <FormField label="Expiração do Secret/Certificate" required help="Máximo recomendado: 90 dias">
+                      <SelectField options={['30 dias', '60 dias', '90 dias', '180 dias', '1 ano', '2 anos']} />
+                    </FormField>
+                    <FormField label="Federated Credential Issuer" help="Apenas para OIDC (ex: GitHub, Azure DevOps)">
+                      <InputField placeholder="https://token.actions.githubusercontent.com" />
+                    </FormField>
+                    <FormField label="Federated Subject" help="Subject identifier do provedor">
+                      <InputField placeholder="repo:org/repo:ref:refs/heads/main" />
+                    </FormField>
+                    <FormField label="API Permissions Necessárias" help="Microsoft Graph ou outras APIs">
+                      <InputField placeholder="User.Read, Application.Read.All" />
+                    </FormField>
+                    <FormField label="Application ID URI" help="Opcional, para APIs customizadas">
+                      <InputField placeholder="api://sp-github-actions-deploy" />
+                    </FormField>
+                    <FormField label="Necessidade de Admin Consent">
+                      <SelectField options={['Não', 'Sim']} />
+                    </FormField>
+                    <FormField label="Owner Técnico" required>
+                      <InputField placeholder="felipe.torres@corp.com" />
+                    </FormField>
+                    <FormField label="Responsável pela Rotação" required help="Quem fará rotação periódica dos secrets">
+                      <InputField placeholder="devops-team@corp.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa Técnica" required>
+                        <TextArea placeholder="Descreva por que um Service Principal é necessário e quais operações ele realizará..." rows={3} />
+                      </FormField>
+                    </div>
+                    <div className="md:col-span-2 bg-info/5 border border-info/10 rounded-lg p-4 flex items-start gap-3">
+                      <Info className="w-5 h-5 text-info shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold">Recomendação de Segurança</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Prefira Federated Credentials (OIDC) ao invés de Client Secrets sempre que possível. Secrets devem ter expiração máxima de 90 dias e rotação automatizada.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure Managed Identity */}
+                {isAzureMI && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tipo de Managed Identity" required>
+                      <SelectField options={['System-Assigned', 'User-Assigned']} />
+                    </FormField>
+                    <FormField label="Nome da Identity" help="Obrigatório para User-Assigned">
+                      <InputField placeholder="mi-webapp-keyvault-access" />
+                    </FormField>
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Resource Group" required>
+                      <SelectField options={azureResourceGroups.map(r => r.name)} />
+                    </FormField>
+                    <FormField label="Recurso de Origem" required help="Recurso Azure que terá a identity">
+                      <InputField placeholder="app-service-webapp-prod" />
+                    </FormField>
+                    <FormField label="Tipo do Recurso de Origem" required>
+                      <SelectField options={['App Service', 'Virtual Machine', 'Azure Function', 'AKS', 'Container Instance', 'Logic App', 'Data Factory', 'Outro']} />
+                    </FormField>
+                    <FormField label="Role(s) Necessárias" required help="Roles que a MI precisa nos recursos destino">
+                      <InputField placeholder="Key Vault Secrets User, Storage Blob Data Reader" />
+                    </FormField>
+                    <FormField label="Recurso(s) de Destino" required help="Recursos que a MI acessará">
+                      <InputField placeholder="kv-secrets-webapp, st-data-prod" />
+                    </FormField>
+                    <FormField label="Scope do Acesso" required>
+                      <SelectField options={['Resource', 'Resource Group', 'Subscription']} />
+                    </FormField>
+                    <FormField label="Tenant" required>
+                      <InputField value="corp.onmicrosoft.com" />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="mariana.oliveira@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['DevOps', 'Engenharia', 'Segurança', 'Infraestrutura']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required help="Por que Managed Identity ao invés de credenciais explícitas">
+                        <TextArea placeholder="Descreva por que Managed Identity é a opção mais segura para este cenário..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure Key Vault Access */}
+                {isAzureKV && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Key Vault" required>
+                      <SelectField options={azureKeyVaults.map(k => `${k.name} (${k.rg})`)} />
+                    </FormField>
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Modelo de Permissão" required help="RBAC é recomendado; Vault Access Policy é legado">
+                      <SelectField options={['Azure RBAC', 'Vault Access Policy']} />
+                    </FormField>
+                    <FormField label="Principal Type" required>
+                      <SelectField options={['User', 'Group', 'Service Principal', 'Managed Identity']} />
+                    </FormField>
+                    <FormField label="Principal ID / Nome" required>
+                      <InputField placeholder="mi-webapp-keyvault-access ou user@corp.com" />
+                    </FormField>
+                    <FormField label="Tipo de Objeto" required help="Quais tipos de objetos serão acessados">
+                      <SelectField options={['Secrets', 'Keys', 'Certificates', 'Secrets + Keys', 'Secrets + Certificates', 'Todos']} />
+                    </FormField>
+                    <FormField label="Permissões em Secrets" help="Se tipo incluir Secrets">
+                      <SelectField options={['Get', 'Get + List', 'Get + List + Set', 'All']} />
+                    </FormField>
+                    <FormField label="Permissões em Keys" help="Se tipo incluir Keys">
+                      <SelectField options={['Get', 'Get + List', 'Get + Wrap/Unwrap', 'All']} />
+                    </FormField>
+                    <FormField label="Permissões em Certificates" help="Se tipo incluir Certificates">
+                      <SelectField options={['Get', 'Get + List', 'Get + List + Create', 'All']} />
+                    </FormField>
+                    <FormField label="Classificação de Dados" required help="Classificação dos dados armazenados no Vault">
+                      <SelectField options={['Público', 'Interno', 'Confidencial', 'Restrito']} />
+                    </FormField>
+                    <FormField label="Necessidade" required>
+                      <SelectField options={['Permanente', 'Temporária']} />
+                    </FormField>
+                    <FormField label="Expiração (se temporária)">
+                      <InputField type="date" />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="patricia.gomes@corp.com" />
+                    </FormField>
+                    <FormField label="Networking" help="Restrições de rede do Key Vault">
+                      <SelectField options={['Public (all networks)', 'Private Endpoint', 'Selected Networks']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva por que o acesso ao Key Vault é necessário e quais segredos/chaves serão acessados..." rows={3} />
+                      </FormField>
+                    </div>
+                    <div className="md:col-span-2 bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">Atenção: Key Vault de Produção</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Acessos a Key Vaults com dados classificados como Confidencial ou Restrito exigem aprovação de Segurança e Compliance. Permissões devem seguir o menor privilégio.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure Subscription Access */}
+                {isAzureSub && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Role" required>
+                      <SelectField options={azureRoleDefinitions} />
+                    </FormField>
+                    <FormField label="Principal Type" required>
+                      <SelectField options={['User', 'Group', 'Service Principal']} />
+                    </FormField>
+                    <FormField label="Principal ID / UPN" required>
+                      <InputField placeholder="user@corp.com ou Group ID" />
+                    </FormField>
+                    <FormField label="Necessidade" required>
+                      <SelectField options={['Permanente', 'Temporária (PIM)']} />
+                    </FormField>
+                    <FormField label="Duração (se temporária)">
+                      <SelectField options={['4 horas', '8 horas', '1 dia', '7 dias', '30 dias']} />
+                    </FormField>
+                    <FormField label="Tenant" required>
+                      <InputField value="corp.onmicrosoft.com" />
+                    </FormField>
+                    <FormField label="Owner da Subscription" required>
+                      <InputField placeholder="ricardo.almeida@corp.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva por que o acesso à subscription é necessário..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure Resource Group Access */}
+                {isAzureRG && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Resource Group" required>
+                      <SelectField options={azureResourceGroups.map(r => `${r.name} (${r.subscription})`)} />
+                    </FormField>
+                    <FormField label="Role" required>
+                      <SelectField options={azureRoleDefinitions} />
+                    </FormField>
+                    <FormField label="Principal Type" required>
+                      <SelectField options={['User', 'Group', 'Service Principal', 'Managed Identity']} />
+                    </FormField>
+                    <FormField label="Principal ID / UPN" required>
+                      <InputField placeholder="user@corp.com ou Object ID" />
+                    </FormField>
+                    <FormField label="Necessidade" required>
+                      <SelectField options={['Permanente', 'Temporária']} />
+                    </FormField>
+                    <FormField label="Owner do Resource Group" required>
+                      <InputField placeholder="mariana.oliveira@corp.com" />
+                    </FormField>
+                    <FormField label="Tags do RG">
+                      <InputField placeholder="Environment=prod, Team=analytics" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva por que o acesso ao Resource Group é necessário..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure RBAC */}
+                {isAzureRBAC && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Scope" required>
+                      <SelectField options={['Management Group', 'Subscription', 'Resource Group', 'Resource']} />
+                    </FormField>
+                    <FormField label="Resource Group" help="Se aplicável">
+                      <SelectField options={azureResourceGroups.map(r => r.name)} placeholder="Selecione..." />
+                    </FormField>
+                    <FormField label="Role Definition" required>
+                      <SelectField options={azureRoleDefinitions} />
+                    </FormField>
+                    <FormField label="Principal Type" required>
+                      <SelectField options={['User', 'Group', 'Service Principal', 'Managed Identity']} />
+                    </FormField>
+                    <FormField label="Principal" required>
+                      <InputField placeholder="user@corp.com ou Object ID" />
+                    </FormField>
+                    <FormField label="Tenant" required>
+                      <InputField value="corp.onmicrosoft.com" />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="felipe.torres@corp.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Justificativa técnica para o RBAC..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* Azure NSG */}
+                {isAzureNSG && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Subscription" required>
+                      <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
+                    </FormField>
+                    <FormField label="Resource Group" required>
+                      <SelectField options={azureResourceGroups.map(r => r.name)} />
+                    </FormField>
+                    <FormField label="NSG Name" required>
+                      <InputField placeholder="nsg-webapp-prod" />
+                    </FormField>
+                    <FormField label="VNet Associada" required>
+                      <InputField placeholder="vnet-corp-prod" />
+                    </FormField>
+                    <FormField label="Subnet Associada">
+                      <InputField placeholder="subnet-app-tier" />
+                    </FormField>
+                    <FormField label="Direção" required>
+                      <SelectField options={['Inbound', 'Outbound', 'Ambos']} />
+                    </FormField>
+                    <FormField label="Source" required>
+                      <InputField placeholder="10.0.0.0/16 ou Service Tag" />
+                    </FormField>
+                    <FormField label="Source Port Range">
+                      <InputField placeholder="* ou range específico" />
+                    </FormField>
+                    <FormField label="Destination" required>
+                      <InputField placeholder="10.0.1.0/24 ou Service Tag" />
+                    </FormField>
+                    <FormField label="Destination Port Range" required>
+                      <InputField placeholder="443, 8080, 3000-3100" />
+                    </FormField>
+                    <FormField label="Protocolo" required>
+                      <SelectField options={['TCP', 'UDP', 'ICMP', 'Any']} />
+                    </FormField>
+                    <FormField label="Ação" required>
+                      <SelectField options={['Allow', 'Deny']} />
+                    </FormField>
+                    <FormField label="Prioridade" required help="100-4096, menor = maior prioridade">
+                      <InputField placeholder="200" type="number" />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="network-team@corp.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva o motivo da regra de NSG e o fluxo de comunicação necessário..." rows={3} />
+                      </FormField>
+                    </div>
+                    <div className="md:col-span-2 bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">Atenção: Regras de Rede</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Regras com Source 0.0.0.0/0 (Any) não são permitidas em produção. Portas devem ser restritas ao mínimo necessário.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ============ OCI SPECIFIC FORMS ============ */}
+
+                {/* OCI IAM Policy Management */}
+                {isOCIIAM && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Compartment de Destino" required>
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
+                    </FormField>
+                    <FormField label="Tipo de Operação" required>
+                      <SelectField options={['Criar nova policy', 'Alterar policy existente', 'Remover policy']} />
+                    </FormField>
+                    <FormField label="Nome da Policy" required>
+                      <InputField placeholder="policy-finops-manage-budget" />
+                    </FormField>
+                    <FormField label="Descrição" required>
+                      <InputField placeholder="Policy para equipe FinOps gerenciar budgets" />
+                    </FormField>
+                    <FormField label="Group / Dynamic Group alvo" required>
+                      <SelectField options={ociGroups} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Policy Statements" required help="Formato: Allow group X to verb resource-type in compartment Y">
+                        <textarea className="input-field w-full font-mono text-xs resize-none" rows={6} placeholder={`Allow group grp-finops-users to manage budgets in compartment cmp-financeiro
+Allow group grp-finops-users to read usage-reports in tenancy
+Allow group grp-finops-users to inspect compartments in tenancy`} />
+                      </FormField>
+                    </div>
+                    <FormField label="Verbo Principal" required help="Nível de acesso conforme hierarquia OCI">
+                      <SelectField options={['inspect', 'read', 'use', 'manage']} />
+                    </FormField>
+                    <FormField label="Resource Type" required>
+                      <InputField placeholder="all-resources, budgets, instances, object-family" />
+                    </FormField>
+                    <FormField label="Condições (where clause)" help="Condições opcionais da policy">
+                      <InputField placeholder="where request.permission = 'OBJECT_READ'" />
+                    </FormField>
+                    <FormField label="Classificação de Risco" required>
+                      <SelectField options={['Baixo', 'Médio', 'Alto', 'Crítico']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="carla.duarte@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['FinOps', 'Infraestrutura Cloud', 'Segurança', 'DevOps', 'Desenvolvimento']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Justificativa detalhada para criação da policy..." rows={3} />
+                      </FormField>
+                    </div>
+                    <div className="md:col-span-2 bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">Atenção: Hierarquia de Verbos OCI</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">O verbo "manage" inclui todos os outros (inspect, read, use). Policies com "manage all-resources" em produção exigem aprovação de Segurança Cloud e Compliance.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* OCI Group Creation */}
+                {isOCIGroup && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Nome do Grupo" required help="Formato: grp-area-funcao">
+                      <InputField placeholder="grp-dev-backend-team" />
+                    </FormField>
+                    <FormField label="Descrição" required>
+                      <InputField placeholder="Grupo para equipe de backend do time de desenvolvimento" />
+                    </FormField>
+                    <FormField label="Tipo" required>
+                      <SelectField options={['Grupo IAM (usuários)', 'Grupo de Federação (IDCS)']} />
+                    </FormField>
+                    <FormField label="Membros Iniciais" help="E-mails ou usernames">
+                      <TextArea placeholder="user1@corp.com&#10;user2@corp.com&#10;user3@corp.com" rows={3} />
+                    </FormField>
+                    <FormField label="Finalidade do Grupo" required>
+                      <TextArea placeholder="Descreva a finalidade e quais recursos este grupo acessará..." rows={3} />
+                    </FormField>
+                    <FormField label="Policy(s) a Serem Associadas" help="Policies que serão criadas ou vinculadas">
+                      <InputField placeholder="policy-dev-manage-instances" />
+                    </FormField>
+                    <FormField label="Compartment(s) de Atuação">
+                      <SelectField options={ociCompartments.map(c => c.name)} />
+                    </FormField>
+                    <FormField label="Owner do Grupo" required>
+                      <InputField placeholder="lucas.ferreira@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['Desenvolvimento', 'Infraestrutura Cloud', 'Segurança', 'DevOps', 'FinOps']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Justificativa para criação do grupo..." rows={3} />
+                      </FormField>
+                    </div>
+                    <FormField label="Tags">
+                      <InputField placeholder="Team=backend, Environment=dev" />
+                    </FormField>
+                  </div>
+                )}
+
+                {/* OCI Dynamic Group */}
+                {isOCIDynGroup && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Nome do Dynamic Group" required help="Formato: dg-tipo-recurso-finalidade">
+                      <InputField placeholder="dg-functions-objstorage-access" />
+                    </FormField>
+                    <FormField label="Descrição" required>
+                      <InputField placeholder="Dynamic Group para Functions acessarem Object Storage" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Matching Rule" required help="Regra que define quais recursos fazem parte do Dynamic Group">
+                        <textarea className="input-field w-full font-mono text-xs resize-none" rows={5} placeholder={`ALL {resource.type = 'fnfunc', resource.compartment.id = 'ocid1.compartment.oc1..dev'}
+
+Exemplos de regras:
+ANY {resource.type = 'instance', resource.compartment.id = '<compartment_ocid>'}
+ALL {resource.type = 'fnfunc'}
+ANY {instance.id = '<instance_ocid>'}`} />
+                      </FormField>
+                    </div>
+                    <FormField label="Tipo de Recurso" required help="Tipo principal de recurso no Dynamic Group">
+                      <SelectField options={['Functions (fnfunc)', 'Instances (instance)', 'API Gateway', 'Autonomous Database', 'Container Instances', 'Outro']} />
+                    </FormField>
+                    <FormField label="Compartment dos Recursos" required>
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
+                    </FormField>
+                    <FormField label="Policy(s) Relacionadas" help="Policies que usarão este Dynamic Group">
+                      <InputField placeholder="policy-dg-functions-objstorage-read" />
+                    </FormField>
+                    <FormField label="Recursos de Destino" help="Quais recursos o DG precisará acessar">
+                      <InputField placeholder="Object Storage, Vault, Streaming" />
+                    </FormField>
+                    <FormField label="Classificação de Risco" required>
+                      <SelectField options={['Baixo', 'Médio', 'Alto', 'Crítico']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="lucas.ferreira@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['Desenvolvimento', 'DevOps', 'Infraestrutura Cloud', 'Segurança']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva por que um Dynamic Group é necessário e quais operações os recursos realizarão..." rows={3} />
+                      </FormField>
+                    </div>
+                    <div className="md:col-span-2 bg-info/5 border border-info/10 rounded-lg p-4 flex items-start gap-3">
+                      <Info className="w-5 h-5 text-info shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold">Fluxo de Dynamic Group</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Após criar o Dynamic Group, será necessário criar uma Policy que conceda permissões a ele. Ex: "Allow dynamic-group dg-functions-objstorage-access to read objects in compartment cmp-desenvolvimento".</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* OCI Compartment Access */}
+                {isOCICompartment && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Compartment Alvo" required>
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.id.slice(-12)})`)} />
+                    </FormField>
+                    <FormField label="Nível de Acesso" required help="Conforme hierarquia de verbos OCI">
+                      <SelectField options={['inspect (somente listar)', 'read (ler dados)', 'use (usar recursos)', 'manage (administrar)']} />
+                    </FormField>
+                    <FormField label="Resource Types" required help="Quais tipos de recursos serão acessados">
+                      <InputField placeholder="all-resources, instances, object-family, virtual-network-family" />
+                    </FormField>
+                    <FormField label="Group / Dynamic Group" required help="Grupo que receberá o acesso">
+                      <SelectField options={ociGroups} />
+                    </FormField>
+                    <FormField label="Compartments Filhos?" required help="Incluir acesso a sub-compartments">
+                      <SelectField options={['Não', 'Sim']} />
+                    </FormField>
+                    <FormField label="Owner do Compartment" required>
+                      <InputField placeholder="roberto.nascimento@corp.com" />
+                    </FormField>
+                    <FormField label="Necessidade" required>
+                      <SelectField options={['Permanente', 'Temporária']} />
+                    </FormField>
+                    <FormField label="Expiração (se temporária)">
+                      <InputField type="date" />
+                    </FormField>
+                    <FormField label="Classificação de Risco" required>
+                      <SelectField options={['Baixo', 'Médio', 'Alto', 'Crítico']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva por que o acesso ao compartment é necessário e quais operações serão realizadas..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* OCI Policy Creation */}
+                {isOCIPolicy && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Nome da Policy" required help="Formato descritivo: policy-grupo-verbo-recurso">
+                      <InputField placeholder="policy-dev-manage-instances-dev" />
+                    </FormField>
+                    <FormField label="Descrição" required>
+                      <InputField placeholder="Policy para equipe de dev gerenciar instâncias em compartment de dev" />
+                    </FormField>
+                    <FormField label="Compartment da Policy" required help="Onde a policy será criada">
+                      <SelectField options={['Root (Tenancy)', ...ociCompartments.map(c => c.name)]} />
+                    </FormField>
+                    <FormField label="Target Compartment" required help="Compartment onde a policy terá efeito">
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
+                    </FormField>
+                    <FormField label="Group / Dynamic Group" required>
+                      <SelectField options={ociGroups} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Policy Statements" required help="Um statement por linha">
+                        <textarea className="input-field w-full font-mono text-xs resize-none" rows={6} placeholder={`Allow group grp-dev-team to manage instances in compartment cmp-desenvolvimento
+Allow group grp-dev-team to use virtual-network-family in compartment cmp-network
+Allow group grp-dev-team to read all-resources in compartment cmp-desenvolvimento`} />
+                      </FormField>
+                    </div>
+                    <FormField label="Verbo(s) Utilizado(s)" required>
+                      <SelectField options={['inspect', 'read', 'use', 'manage', 'Múltiplos verbos']} />
+                    </FormField>
+                    <FormField label="Resource Types" required>
+                      <InputField placeholder="instances, virtual-network-family, object-family" />
+                    </FormField>
+                    <FormField label="Condições (where clause)" help="Condições opcionais">
+                      <InputField placeholder="where target.compartment.name != 'cmp-financeiro'" />
+                    </FormField>
+                    <FormField label="Classificação de Risco" required>
+                      <SelectField options={['Baixo', 'Médio', 'Alto', 'Crítico']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="lucas.ferreira@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['Desenvolvimento', 'DevOps', 'Infraestrutura Cloud', 'Segurança', 'FinOps']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva a necessidade desta policy e como ela segue o menor privilégio..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* OCI Vault / Keys */}
+                {isOCIVault && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Tipo de Operação" required>
+                      <SelectField options={['Criar Vault', 'Criar Key', 'Acesso a Vault/Key existente']} />
+                    </FormField>
+                    <FormField label="Vault" help="Se acesso ou criação de key em vault existente">
+                      <SelectField options={ociVaults.map(v => `${v.name} (${v.compartment})`)} placeholder="Selecione..." />
+                    </FormField>
+                    <FormField label="Nome do Vault / Key" required>
+                      <InputField placeholder="vault-data-encryption ou key-adb-prod" />
+                    </FormField>
+                    <FormField label="Compartment" required>
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
+                    </FormField>
+                    <FormField label="Tipo de Vault" help="Se criando novo Vault">
+                      <SelectField options={['Default (Shared)', 'Virtual Private']} />
+                    </FormField>
+                    <FormField label="Key Shape" help="Se criando Key">
+                      <SelectField options={['AES-256', 'RSA-2048', 'RSA-4096', 'ECDSA-P256', 'ECDSA-P384']} />
+                    </FormField>
+                    <FormField label="Protection Mode" help="Software ou HSM">
+                      <SelectField options={['Software', 'HSM']} />
+                    </FormField>
+                    <FormField label="Classificação de Dados" required>
+                      <SelectField options={['Público', 'Interno', 'Confidencial', 'Restrito']} />
+                    </FormField>
+                    <FormField label="Rotação Automática">
+                      <SelectField options={['Desabilitada', '90 dias', '180 dias', '365 dias']} />
+                    </FormField>
+                    <FormField label="Group com Acesso" required>
+                      <SelectField options={ociGroups} />
+                    </FormField>
+                    <FormField label="Nível de Acesso" required>
+                      <SelectField options={['use (encrypt/decrypt)', 'manage (full control)']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="patricia.gomes@corp.com" />
+                    </FormField>
+                    <FormField label="Time Responsável" required>
+                      <SelectField options={['Segurança', 'Infraestrutura Cloud', 'DBA', 'DevOps']} />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva quais dados serão protegidos e por que a criptografia é necessária..." rows={3} />
+                      </FormField>
+                    </div>
+                    <div className="md:col-span-2 bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">Atenção: Dados Sensíveis</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Vaults com dados classificados como Restrito ou Confidencial exigem Virtual Private Vault e aprovação de Compliance. Keys com Protection Mode HSM são recomendadas para produção.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* OCI NSG */}
+                {isOCINSG && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Compartment" required>
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
+                    </FormField>
+                    <FormField label="VCN" required>
+                      <InputField placeholder="vcn-corp-prod" />
+                    </FormField>
+                    <FormField label="Nome do NSG" required>
+                      <InputField placeholder="nsg-oke-workers" />
+                    </FormField>
+                    <FormField label="Descrição" required>
+                      <InputField placeholder="NSG para workers do cluster OKE de produção" />
+                    </FormField>
+                    <FormField label="Direção" required>
+                      <SelectField options={['Ingress', 'Egress', 'Ambos']} />
+                    </FormField>
+                    <FormField label="Source Type" required>
+                      <SelectField options={['CIDR Block', 'NSG', 'Service']} />
+                    </FormField>
+                    <FormField label="Source" required>
+                      <InputField placeholder="10.0.0.0/16 ou NSG OCID" />
+                    </FormField>
+                    <FormField label="Destination Type" required>
+                      <SelectField options={['CIDR Block', 'NSG', 'Service']} />
+                    </FormField>
+                    <FormField label="Destination" required>
+                      <InputField placeholder="10.0.1.0/24" />
+                    </FormField>
+                    <FormField label="Protocolo" required>
+                      <SelectField options={['TCP', 'UDP', 'ICMP', 'All Protocols']} />
+                    </FormField>
+                    <FormField label="Port Range" required>
+                      <InputField placeholder="443, 6443, 10250-10255" />
+                    </FormField>
+                    <FormField label="Stateless?" required>
+                      <SelectField options={['Não (Stateful)', 'Sim (Stateless)']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="network-team@corp.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva o fluxo de comunicação e por que esta regra é necessária..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* OCI Object Storage */}
+                {isOCIOS && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="Tenancy" required>
+                      <InputField value="corp-tenancy" />
+                    </FormField>
+                    <FormField label="Compartment" required>
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
+                    </FormField>
+                    <FormField label="Bucket Name" required>
+                      <InputField placeholder="bucket-data-lake-prod" />
+                    </FormField>
+                    <FormField label="Namespace">
+                      <InputField placeholder="corp-namespace" />
+                    </FormField>
+                    <FormField label="Tipo de Acesso" required>
+                      <SelectField options={['read (GET/LIST)', 'use (read + PUT)', 'manage (full control)']} />
+                    </FormField>
+                    <FormField label="Group / Dynamic Group" required>
+                      <SelectField options={ociGroups} />
+                    </FormField>
+                    <FormField label="Prefixo de Acesso" help="Restringir acesso a prefixo específico">
+                      <InputField placeholder="/data/financeiro/" />
+                    </FormField>
+                    <FormField label="Visibilidade do Bucket" required>
+                      <SelectField options={['Private', 'Public (read-only)', 'Public (read-write)']} />
+                    </FormField>
+                    <FormField label="Criptografia">
+                      <SelectField options={['Oracle-Managed Keys', 'Customer-Managed Keys (Vault)']} />
+                    </FormField>
+                    <FormField label="Versioning">
+                      <SelectField options={['Desabilitado', 'Habilitado']} />
+                    </FormField>
+                    <FormField label="Lifecycle Rules" help="Regras de retenção ou archival">
+                      <SelectField options={['Nenhuma', 'Delete após 90 dias', 'Archive após 30 dias', 'Custom']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="carla.duarte@corp.com" />
+                    </FormField>
+                    <div className="md:col-span-2">
+                      <FormField label="Justificativa" required>
+                        <TextArea placeholder="Descreva por que o acesso ao Object Storage é necessário..." rows={3} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fallback for any non-specific Azure category */}
+                {!isAzureSpecific && providerId === 'azure' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField label="Subscription" required>
                       <SelectField options={azureSubscriptions.map(s => `${s.name} (${s.id})`)} />
@@ -519,19 +1339,13 @@ export default function NewTicket() {
                       <SelectField options={['Subscription', 'Resource Group', 'Resource']} />
                     </FormField>
                     <FormField label="Role Definition" required>
-                      <SelectField options={['Reader', 'Contributor', 'Owner', 'User Access Administrator', 'Custom Role']} />
+                      <SelectField options={azureRoleDefinitions} />
                     </FormField>
                     <FormField label="Principal Type" required>
                       <SelectField options={['User', 'Group', 'Service Principal', 'Managed Identity']} />
                     </FormField>
-                    <FormField label="Service Principal Name">
-                      <InputField placeholder="sp-github-actions-deploy" />
-                    </FormField>
-                    <FormField label="Tenant">
-                      <InputField placeholder="corp.onmicrosoft.com" />
-                    </FormField>
-                    <FormField label="Owner">
-                      <InputField placeholder="felipe.torres@corp.com" />
+                    <FormField label="Tenant" required>
+                      <InputField value="corp.onmicrosoft.com" />
                     </FormField>
                     <div className="md:col-span-2">
                       <FormField label="Justificativa" required>
@@ -541,33 +1355,23 @@ export default function NewTicket() {
                   </div>
                 )}
 
-                {!isAWSRole && !isAWSPset && !isAWSProfile && !isAWSAccount && providerId === 'oci' && (
+                {/* Fallback for any non-specific OCI category */}
+                {!isOCISpecific && providerId === 'oci' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField label="Tenancy" required>
-                      <InputField placeholder="corp-tenancy" />
+                      <InputField value="corp-tenancy" />
                     </FormField>
                     <FormField label="Compartment" required>
-                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.id.slice(-10)})`)} />
+                      <SelectField options={ociCompartments.map(c => `${c.name} (${c.env})`)} />
                     </FormField>
-                    <FormField label="Group Name">
-                      <InputField placeholder="grp-finops-users" />
-                    </FormField>
-                    <FormField label="Dynamic Group Rule">
-                      <InputField placeholder="ALL {resource.type = 'fnfunc'}" />
-                    </FormField>
-                    <div className="md:col-span-2">
-                      <FormField label="Policy Statement" help="Formato: Allow group X to manage Y in compartment Z">
-                        <TextArea placeholder="Allow group grp-finops-users to manage all-resources in compartment cmp-financeiro" rows={3} />
-                      </FormField>
-                    </div>
-                    <FormField label="Target Compartment" required>
-                      <SelectField options={ociCompartments.map(c => c.name)} />
-                    </FormField>
-                    <FormField label="Owner" required>
-                      <InputField placeholder="carla.duarte@corp.com" />
+                    <FormField label="Group" required>
+                      <SelectField options={ociGroups} />
                     </FormField>
                     <FormField label="Classificação de Risco">
                       <SelectField options={['Baixo', 'Médio', 'Alto', 'Crítico']} />
+                    </FormField>
+                    <FormField label="Owner" required>
+                      <InputField placeholder="carla.duarte@corp.com" />
                     </FormField>
                     <div className="md:col-span-2">
                       <FormField label="Justificativa" required>
