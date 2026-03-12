@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
+import { AnimatedPage } from './AnimatedPage';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,7 +15,9 @@ export function Layout({ children }: LayoutProps) {
         <TopBar />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1400px] mx-auto p-6 lg:p-8">
-            {children}
+            <AnimatedPage>
+              {children}
+            </AnimatedPage>
           </div>
         </main>
       </div>
