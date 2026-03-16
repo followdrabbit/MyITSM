@@ -4,19 +4,16 @@ import { ThemeToggle } from './ThemeToggle';
 export function TopBar() {
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
-      {/* Search */}
       <div className="flex items-center gap-2 max-w-md flex-1">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar chamados, categorias, provedores..."
+            placeholder="Buscar chamados, categorias..."
             className="input-field w-full pl-9 pr-4 py-2"
           />
         </div>
       </div>
-
-      {/* Right */}
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">

@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { tickets } from '@/data/mockData';
-import { ProviderBadge, StatusBadge, CriticalityBadge, EnvironmentBadge, TypeBadge, PostReviewBadge } from '@/components/Badges';
+import { StatusBadge, CriticalityBadge, EnvironmentBadge, TypeBadge, PostReviewBadge } from '@/components/Badges';
 import { Search, Filter } from 'lucide-react';
 
 const spring = { type: 'spring' as const, duration: 0.4, bounce: 0 };
 
 export default function TicketList() {
   const [search, setSearch] = useState('');
-  const [providerFilter, setProviderFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [critFilter, setCritFilter] = useState('');
   const [envFilter, setEnvFilter] = useState('');
@@ -18,7 +17,6 @@ export default function TicketList() {
 
   const filtered = tickets.filter(t => {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !t.id.toLowerCase().includes(search.toLowerCase())) return false;
-    if (providerFilter && t.provider !== providerFilter) return false;
     if (statusFilter && t.status !== statusFilter) return false;
     if (critFilter && t.criticality !== critFilter) return false;
     if (envFilter && t.environment !== envFilter) return false;
@@ -30,8 +28,8 @@ export default function TicketList() {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1>Chamados</h1>
-          <p className="text-muted-foreground mt-1">Consulte e gerencie todas as solicitações cloud.</p>
+          <h1>Meus Chamados</h1>
+          <p className="text-muted-foreground mt-1">Consulte e acompanhe suas solicitações AWS.</p>
         </div>
 
         {/* Filters */}
@@ -40,22 +38,16 @@ export default function TicketList() {
             <Filter className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtros</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" placeholder="Buscar por ID ou título..." value={search} onChange={e => setSearch(e.target.value)} className="input-field w-full pl-9" />
             </div>
             <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="input-field">
               <option value="">Todos os tipos</option>
-              <option value="standard">Solicitação padrão</option>
+              <option value="standard">Padrão</option>
               <option value="audit">Auditoria</option>
-              <option value="breaking-glass">Breaking Glass</option>
-            </select>
-            <select value={providerFilter} onChange={e => setProviderFilter(e.target.value)} className="input-field">
-              <option value="">Todos provedores</option>
-              <option value="aws">AWS</option>
-              <option value="azure">Azure</option>
-              <option value="oci">OCI</option>
+              <option value="breaking-glass">Emergencial</option>
             </select>
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field">
               <option value="">Todos status</option>
@@ -91,9 +83,7 @@ export default function TicketList() {
                   <th className="px-5 py-3">ID</th>
                   <th className="px-5 py-3">Título</th>
                   <th className="px-5 py-3">Tipo</th>
-                  <th className="px-5 py-3">Provedor</th>
                   <th className="px-5 py-3">Categoria</th>
-                  <th className="px-5 py-3">Solicitante</th>
                   <th className="px-5 py-3">Ambiente</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Criticidade</th>
@@ -121,9 +111,7 @@ export default function TicketList() {
                         <PostReviewBadge status={ticket.postReviewStatus} />
                       )}
                     </td>
-                    <td className="px-5 py-3"><ProviderBadge provider={ticket.provider} /></td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">{ticket.categoryName}</td>
-                    <td className="px-5 py-3 text-sm">{ticket.requester}</td>
                     <td className="px-5 py-3"><EnvironmentBadge env={ticket.environment} /></td>
                     <td className="px-5 py-3"><StatusBadge status={ticket.status} /></td>
                     <td className="px-5 py-3"><CriticalityBadge criticality={ticket.criticality} /></td>
