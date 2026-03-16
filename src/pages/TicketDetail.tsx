@@ -1,27 +1,27 @@
 import { Layout } from '@/components/Layout';
 import { useParams, Link } from 'react-router-dom';
-import { tickets, categories, approvers } from '@/data/mockData';
-import { ProviderBadge, StatusBadge, CriticalityBadge, EnvironmentBadge, TypeBadge, PostReviewBadge } from '@/components/Badges';
-import { ArrowLeft, CheckCircle2, Clock, Circle, MessageSquare, Paperclip, History, AlertOctagon, Shield, Eye } from 'lucide-react';
+import { tickets, catalog, approvers } from '@/data/mockData';
+import { StatusBadge, CriticalityBadge, EnvironmentBadge, TypeBadge, PostReviewBadge } from '@/components/Badges';
+import { ArrowLeft, CheckCircle2, Clock, Circle, MessageSquare, Paperclip, AlertOctagon, Shield, Eye } from 'lucide-react';
 import { useState } from 'react';
 
 export default function TicketDetail() {
   const { ticketId } = useParams();
   const ticket = tickets.find(t => t.id === ticketId) || tickets[0];
-  const category = categories.find(c => c.id === ticket.categoryId);
+  const category = catalog.find(c => c.id === ticket.categoryId);
   const [activeTab, setActiveTab] = useState('Visão Geral');
 
   const isBreakingGlass = ticket.type === 'breaking-glass';
   const isAudit = ticket.type === 'audit';
 
   const baseTabs = ['Visão Geral', 'Dados Técnicos', 'Segurança', 'Aprovações', 'Anexos', 'Histórico'];
-  const tabs = isBreakingGlass ? [...baseTabs, 'Pós-Uso / Post Review'] : isAudit ? [...baseTabs, 'Escopo da Auditoria'] : baseTabs;
+  const tabs = isBreakingGlass ? [...baseTabs, 'Pós-Uso'] : isAudit ? [...baseTabs, 'Escopo da Auditoria'] : baseTabs;
 
   const timeline = isBreakingGlass ? [
     { label: 'Solicitação Emergencial Criada', date: new Date(ticket.createdAt).toLocaleString('pt-BR'), done: true, by: ticket.requester },
     { label: 'Validação Automática', date: new Date(ticket.createdAt).toLocaleString('pt-BR'), done: true, by: 'Sistema' },
     { label: 'Aprovação Emergencial', date: ticket.status !== 'Aguardando Aprovação' ? new Date(ticket.updatedAt).toLocaleString('pt-BR') : '', done: ticket.status !== 'Aguardando Aprovação', by: 'Segurança Cloud', pending: ticket.status === 'Aguardando Aprovação' },
-    { label: 'Acesso Concedido', date: ticket.status === 'Em Execução' || ticket.status === 'Concluído' ? new Date(ticket.updatedAt).toLocaleString('pt-BR') : '', done: ticket.status === 'Em Execução' || ticket.status === 'Concluído', by: 'IAM Admin', pending: false },
+    { label: 'Acesso Concedido', date: ticket.status === 'Em Execução' || ticket.status === 'Concluído' ? new Date(ticket.updatedAt).toLocaleString('pt-BR') : '', done: ticket.status === 'Em Execução' || ticket.status === 'Concluído', by: 'IAM Admin' },
     { label: 'Revogação do Acesso', date: ticket.status === 'Concluído' ? new Date(ticket.updatedAt).toLocaleString('pt-BR') : '', done: ticket.status === 'Concluído', by: 'Sistema' },
     { label: 'Revisão Pós-Uso', date: ticket.postReviewStatus === 'Concluída' ? new Date(ticket.updatedAt).toLocaleString('pt-BR') : '', done: ticket.postReviewStatus === 'Concluída', by: 'Identity Governance', pending: ticket.postReviewStatus === 'Pendente' },
   ] : [
@@ -33,16 +33,9 @@ export default function TicketDetail() {
     { label: 'Conclusão', date: '', done: false, by: '' },
   ];
 
-  const comments = isBreakingGlass ? [
-    { author: ticket.requester, date: new Date(ticket.createdAt).toLocaleString('pt-BR'), text: `Solicitação emergencial criada. Incidente: ${ticket.incidentId}. ${ticket.justification}` },
-    { author: 'Sistema', date: new Date(ticket.createdAt).toLocaleString('pt-BR'), text: 'Validação automática concluída. Acesso Breaking Glass requer aprovação reforçada.' },
-    { author: 'Roberto Nascimento', date: new Date(ticket.updatedAt).toLocaleString('pt-BR'), text: 'Incidente validado. Aprovando acesso emergencial com duração máxima conforme solicitado.' },
-  ] : isAudit ? [
-    { author: ticket.requester, date: new Date(ticket.createdAt).toLocaleString('pt-BR'), text: `Solicitação de auditoria criada. ${ticket.justification}` },
-    { author: 'Sistema', date: new Date(ticket.createdAt).toLocaleString('pt-BR'), text: 'Validação automática concluída. Escopo da auditoria validado.' },
-  ] : [
-    { author: 'Ana Souza', date: '15/01/2024 10:32', text: 'Solicitação criada conforme alinhamento com o time de Dados.' },
-    { author: 'Sistema', date: '15/01/2024 10:31', text: 'Validação automática concluída.' },
+  const comments = [
+    { author: ticket.requester, date: new Date(ticket.createdAt).toLocaleString('pt-BR'), text: isBreakingGlass ? `Solicitação emergencial criada. Incidente: ${ticket.incidentId}. ${ticket.justification}` : `Solicitação criada. ${ticket.justification}` },
+    { author: 'Sistema', date: new Date(ticket.createdAt).toLocaleString('pt-BR'), text: isBreakingGlass ? 'Validação automática concluída. Acesso emergencial requer aprovação reforçada.' : 'Validação automática concluída.' },
   ];
 
   return (
@@ -57,7 +50,6 @@ export default function TicketDetail() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="font-mono tabular-nums">{ticket.id}</h1>
               <StatusBadge status={ticket.status} />
-              <ProviderBadge provider={ticket.provider} size="lg" />
               <CriticalityBadge criticality={ticket.criticality} />
               <EnvironmentBadge env={ticket.environment} />
               <TypeBadge type={ticket.type} />
@@ -74,21 +66,20 @@ export default function TicketDetail() {
             <div>
               <p className="text-sm font-bold text-destructive">Acesso Emergencial — Breaking Glass</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Incidente: <span className="font-mono font-medium text-foreground">{ticket.incidentId}</span> · 
-                Duração: <span className="font-medium text-foreground">{ticket.breakingGlassDuration}</span> · 
-                Revisão pós-uso: <span className="font-medium text-foreground">{ticket.postReviewStatus}</span>
+                Incidente: <span className="font-mono font-medium text-foreground">{ticket.incidentId}</span> ·
+                Duração: <span className="font-medium text-foreground">{ticket.breakingGlassDuration}</span> ·
+                Revisão: <span className="font-medium text-foreground">{ticket.postReviewStatus}</span>
               </p>
             </div>
           </div>
         )}
 
-        {/* Audit Banner */}
         {isAudit && (
           <div className="bg-info/5 border border-info/20 rounded-xl p-4 flex items-start gap-3">
             <Eye className="w-5 h-5 text-info shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-bold text-info">Solicitação de Auditoria</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Auditoria de conformidade e governança cloud. Resultado esperado conforme escopo definido.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Auditoria de conformidade AWS. Resultado conforme escopo definido.</p>
             </div>
           </div>
         )}
@@ -151,14 +142,15 @@ export default function TicketDetail() {
                     ['Sistema', ticket.system],
                     ['Centro de Custo', ticket.costCenter],
                     ['SLA', ticket.sla],
+                    ['Categoria', ticket.categoryName],
+                    ['Tipo', ticket.requestTypeName],
+                    ...(ticket.accountName ? [['Conta AWS', `${ticket.accountId} (${ticket.accountName})`]] : []),
                     ...(ticket.incidentId ? [['Incidente', ticket.incidentId]] : []),
                     ...(ticket.breakingGlassDuration ? [['Duração do Acesso', ticket.breakingGlassDuration]] : []),
-                    ['Criado em', new Date(ticket.createdAt).toLocaleString('pt-BR')],
-                    ['Atualizado em', new Date(ticket.updatedAt).toLocaleString('pt-BR')],
                   ].map(([label, value], i) => (
                     <div key={i} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
                       <span className="text-muted-foreground">{label}</span>
-                      <span className="font-medium">{value}</span>
+                      <span className="font-medium text-right">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -175,24 +167,18 @@ export default function TicketDetail() {
 
             {activeTab === 'Dados Técnicos' && (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Dados técnicos conforme a categoria {ticket.categoryName}.</p>
-                {isBreakingGlass && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                      ['Tipo de Acesso', 'Administrador'],
-                      ['Recurso Alvo', ticket.system],
-                      ['Identidade', ticket.requesterEmail],
-                      ['Duração', ticket.breakingGlassDuration || 'N/A'],
-                      ['Revogação', 'Automática'],
-                      ['Registro de Sessão', 'Habilitado'],
-                    ].map(([label, value], i) => (
-                      <div key={i} className="flex justify-between text-sm py-2 border-b border-border">
-                        <span className="text-muted-foreground">{label}</span>
-                        <span className="font-medium text-right">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-sm text-muted-foreground">Dados técnicos conforme {ticket.categoryName} — {ticket.requestTypeName}.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    ...(ticket.accountId ? [['Conta AWS', `${ticket.accountId} (${ticket.accountName})`]] : []),
+                    ...(isBreakingGlass ? [['Tipo de Acesso', 'Administrador'], ['Duração', ticket.breakingGlassDuration || 'N/A'], ['Revogação', 'Automática'], ['Registro de Sessão', 'Habilitado']] : []),
+                  ].map(([label, value], i) => (
+                    <div key={i} className="flex justify-between text-sm py-2 border-b border-border">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="font-medium text-right">{value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -203,7 +189,6 @@ export default function TicketDetail() {
                     ['Classificação de Risco', isBreakingGlass ? 'Crítico' : 'Alto'],
                     ['Segregação de Função', 'Sem conflito identificado'],
                     ['Menor Privilégio', isBreakingGlass ? 'Exceção emergencial' : 'Justificado'],
-                    ['Acesso Privilegiado', isBreakingGlass ? 'Sim - temporário' : 'Não'],
                     ...(isBreakingGlass ? [['Trilha de Auditoria', 'Obrigatória'], ['Revisão Pós-Uso', 'Obrigatória']] : []),
                   ].map(([label, value], i) => (
                     <div key={i} className="flex justify-between text-sm py-2 border-b border-border">
@@ -215,7 +200,7 @@ export default function TicketDetail() {
                 {isBreakingGlass && (
                   <div className="bg-destructive/5 border border-destructive/10 rounded-lg p-4">
                     <p className="text-sm font-medium text-destructive mb-1">Acesso Emergencial de Alto Risco</p>
-                    <p className="text-sm text-muted-foreground">Acesso breaking glass com trilha de auditoria ativa. Todas as ações são monitoradas e revisadas obrigatoriamente após o uso.</p>
+                    <p className="text-sm text-muted-foreground">Todas as ações são monitoradas e revisadas obrigatoriamente após o uso.</p>
                   </div>
                 )}
               </div>
@@ -223,7 +208,7 @@ export default function TicketDetail() {
 
             {activeTab === 'Aprovações' && (
               <div className="space-y-3">
-                {approvers.slice(0, category?.approvalsCount || 2).map((a, i) => (
+                {approvers.slice(0, category?.approvals.length || 2).map((a, i) => (
                   <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-border">
                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
                       {a.name.split(' ').map(n => n[0]).join('')}
@@ -269,12 +254,10 @@ export default function TicketDetail() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    ['Tipo de Auditoria', 'Permissões de usuários, Acessos privilegiados'],
-                    ['Escopo', ticket.provider === 'aws' ? 'Contas produtivas' : ticket.provider === 'azure' ? 'Subscriptions produtivas' : 'Compartments produtivos'],
+                    ['Tipo de Auditoria', ticket.requestTypeName],
+                    ['Escopo', 'Contas produtivas'],
                     ['Período', 'Últimos 90 dias'],
                     ['Saída Esperada', 'Relatório executivo + Matriz de permissões'],
-                    ['Consolidado Executivo', 'Sim'],
-                    ['Evidência Técnica', 'Sim'],
                   ].map(([label, value], i) => (
                     <div key={i} className="flex justify-between text-sm py-2 border-b border-border">
                       <span className="text-muted-foreground">{label}</span>
@@ -282,28 +265,17 @@ export default function TicketDetail() {
                     </div>
                   ))}
                 </div>
-                <div className="bg-info/5 border border-info/10 rounded-lg p-4">
-                  <p className="text-sm font-medium text-info mb-2">Itens que serão Auditados</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                    {['Permissões de usuários', 'Acessos privilegiados', 'Roles e policies', 'Identidades inativas', 'Contas de serviço', 'Acessos cross-account'].map((item, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-info shrink-0" />
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
-            {activeTab === 'Pós-Uso / Post Review' && isBreakingGlass && (
+            {activeTab === 'Pós-Uso' && isBreakingGlass && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     ['O acesso foi utilizado?', ticket.postReviewStatus === 'Concluída' ? 'Sim' : 'Em análise'],
-                    ['Ações realizadas', ticket.postReviewStatus === 'Concluída' ? 'Ajuste de policy conforme plano' : 'Pendente de validação'],
-                    ['Houve desvio de finalidade?', ticket.postReviewStatus === 'Concluída' ? 'Não' : 'Em análise'],
-                    ['Acesso removido?', ticket.postReviewStatus === 'Concluída' ? 'Sim - revogação automática' : 'Pendente'],
+                    ['Ações realizadas', ticket.postReviewStatus === 'Concluída' ? 'Conforme plano' : 'Pendente'],
+                    ['Houve desvio?', ticket.postReviewStatus === 'Concluída' ? 'Não' : 'Em análise'],
+                    ['Acesso removido?', ticket.postReviewStatus === 'Concluída' ? 'Sim — revogação automática' : 'Pendente'],
                     ['Evidências coletadas?', ticket.postReviewStatus === 'Concluída' ? 'Sim' : 'Pendente'],
                     ['Parecer final', ticket.postReviewStatus === 'Concluída' ? 'Aprovado sem ressalvas' : 'Pendente'],
                   ].map(([label, value], i) => (
@@ -316,13 +288,13 @@ export default function TicketDetail() {
                 {ticket.postReviewStatus === 'Concluída' && (
                   <div className="bg-success/5 border border-success/10 rounded-lg p-4">
                     <p className="text-sm font-medium text-success mb-1">Revisão Pós-Uso Concluída</p>
-                    <p className="text-sm text-muted-foreground">Acesso utilizado conforme justificativa. Sem desvios identificados. Processo breaking glass encerrado com sucesso.</p>
+                    <p className="text-sm text-muted-foreground">Acesso utilizado conforme justificativa. Sem desvios. Processo encerrado.</p>
                   </div>
                 )}
                 {ticket.postReviewStatus === 'Pendente' && (
                   <div className="bg-warning/5 border border-warning/10 rounded-lg p-4">
                     <p className="text-sm font-medium text-warning mb-1">Revisão Pós-Uso Pendente</p>
-                    <p className="text-sm text-muted-foreground">A revisão pós-uso deve ser realizada pelo responsável de segurança após o encerramento do acesso emergencial.</p>
+                    <p className="text-sm text-muted-foreground">A revisão deve ser realizada pelo responsável de segurança após encerramento do acesso.</p>
                   </div>
                 )}
               </div>
