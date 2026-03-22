@@ -184,3 +184,21 @@ Arquivo-chave de domínio:
 - Nas capturas preenchidas, sempre deve ser usada conta/produto com os 3 ambientes (`DEV`, `HML`, `PRD`).
 - Regra: toda criacao, alteracao ou remocao de categoria, e toda mudanca em tela de solicitacao, exige nova execucao do script e commit dos screenshots atualizados no mesmo PR.
 - Guia operacional: `docs/screenshots/README.md`.
+
+### Visao rapida do sistema
+
+#### Catalogo da categoria (Contas AWS)
+
+![Catalogo da categoria Contas AWS](docs/screenshots/categories/aws-accounts/overview.png)
+
+#### Fluxo completo de abertura (Criacao de Conta AWS)
+
+| Formulario vazio | Formulario preenchido | Revisao final |
+| --- | --- | --- |
+| ![Criacao de conta AWS - formulario vazio](docs/screenshots/categories/aws-accounts/account-create-empty.png) | ![Criacao de conta AWS - formulario preenchido](docs/screenshots/categories/aws-accounts/account-create-filled.png) | ![Criacao de conta AWS - revisao](docs/screenshots/categories/aws-accounts/account-create-review.png) |
+
+#### Exemplo de fluxo tecnico (Criacao de Role AWS)
+
+| Formulario preenchido | Revisao final |
+| --- | --- |
+| ![Criacao de role AWS - formulario preenchido](docs/screenshots/categories/aws-roles/role-create-filled.png) | ![Criacao de role AWS - revisao](docs/screenshots/categories/aws-roles/role-create-review.png) |
